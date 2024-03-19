@@ -45,9 +45,15 @@ int main(int argc, char **argv) {
   }
 
   struct sockaddr_in client_addr;
-  int client_addr_len = sizeof(client_addr);
+
+  socklen_t client_addr_len = sizeof(client_addr);
+
+  bind(server_fd, (const struct sockaddr *) &client_addr, client_addr_len);
+  listen(server_fd, connection_backlog);
   int connection = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  std::cout << "HTTP/1.1 200 OK\r\n\r\n";
+  const char* msg = "HTTP/1.1 200 OK\r\n\r\n";
+  send(connection, msg, strlen(msg), 0);
+
   close(server_fd);
 
   return 0;
