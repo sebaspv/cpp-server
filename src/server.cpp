@@ -8,7 +8,24 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <unordered_map>
+
+int findtext(const std::string& pat, const std::string& txt){
+    int M = pat.size();
+    int N = txt.size();
+    int lastindex = -1;
+    bool found = false;
+    for (int i = 0; i <= N - M; i++) {
+        int j;
+        for (j = 0; j < M; j++)
+            if (txt[i + j] != pat[j])
+                break;
+ 
+        if (j == M){
+          lastindex = i;
+        }
+    }
+    return lastindex;
+}
 
 int main(int argc, char **argv) {
   std::cout << "Logs from your program will appear here!\n";
@@ -49,8 +66,8 @@ int main(int argc, char **argv) {
   listen(server_fd, connection_backlog);
   int connection = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
   
-  char req[5000];
-  int bytes = recv(connection, req, 5000, 0);
+  char req[4096];
+  int bytes = recv(connection, req, 4096, 0);
   std::string request(req, bytes);
   int spacecount = 0;
   std::string route;
@@ -83,9 +100,28 @@ int main(int argc, char **argv) {
   }
   else {
     std::string echoroute(route.begin(), route.begin() + 6);
+    int agent = findtext("GET /user-agent", request);
     if (echoroute == " /echo"){
       std::string afterroute(route.begin() + 7, route.end());
       std::string msg = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(afterroute.size()) + "\r\n\r\n" + afterroute;
+      const char * response = msg.c_str();
+      send(connection, response, strlen(response), 0);
+    }
+    else if (agent != -1){
+      std::string searching = "User-Agent: ";
+      int tosearch = searching.size();
+      int curlcontent = findtext(searching, request);
+      std::string agentheader(request.begin() + curlcontent + tosearch, request.end());
+      std::string finroute;
+      for (auto aa: agentheader){
+        if (aa == '\r'){
+          break;
+        }
+        else {
+          finroute.push_back(aa);
+        }
+      }
+      std::string msg = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(finroute.size()) + "\r\n\r\n" + finroute;
       const char * response = msg.c_str();
       send(connection, response, strlen(response), 0);
     }
