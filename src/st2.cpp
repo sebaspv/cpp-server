@@ -65,41 +65,16 @@ int main(int argc, char **argv) {
       break;
     }
   }
-  std::string content;
-  int slashcount = 0;
-  for (auto letter: route){
-    if (letter == '/'){
-      slashcount++;
-      continue;
-    }
-    if (slashcount == 1){
-      content.push_back(letter);
-    }
+  int status = 404;
+  if (route == " /"){
+    const char* msg = "HTTP/1.1 200 OK\r\n\r\n";
+    send(connection, msg, strlen(msg), 0);
   }
-
-  if (route.size() < 6 && route != " /"){
+  else{
     const char* msg = "HTTP/1.1 404 Not Found\r\n\r\n";
     send(connection, msg, strlen(msg), 0);
   }
-  else {
-    std::string echoroute(route.begin(), route.begin() + 6);
-    if (echoroute == " /echo"){
-      std::string afterroute(route.begin() + 7, route.end());
-      std::string msg = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(afterroute.size()) + "\r\n\r\n" + afterroute;
-      const char * response = msg.c_str();
-      send(connection, response, strlen(response), 0);
-    }
-    else if (route == " /"){
-      std::string msg = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.size()) + "\r\n\r\n" + content;
-      const char * response = msg.c_str();
-      send(connection, response, strlen(response), 0);
-    }
-    else {
-      const char* msg = "HTTP/1.1 404 Not Found\r\n\r\n";
-      send(connection, msg, strlen(msg), 0);
-    }
-  }
-  
+
   close(server_fd);
 
   return 0;
