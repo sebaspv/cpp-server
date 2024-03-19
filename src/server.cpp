@@ -46,12 +46,8 @@ int main(int argc, char **argv) {
 
   struct sockaddr_in client_addr;
   int client_addr_len = sizeof(client_addr);
-
-  std::cout << "Waiting for a client to connect...\n";
-
-  accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  std::cout << "Client connected\n";
-
+  connection = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  std::cout << "HTTP/1.1 200 OK\r\n\r\n";
   close(server_fd);
 
   return 0;
