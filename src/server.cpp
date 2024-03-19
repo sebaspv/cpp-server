@@ -1,5 +1,6 @@
-#include <iostream>
 #include <cstdlib>
+#include <vector>
+#include <iostream>
 #include <string>
 #include <cstring>
 #include <unistd.h>
@@ -7,12 +8,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <unordered_map>
 
 int main(int argc, char **argv) {
-  // You can use print statements as follows for debugging, they'll be visible when running tests.
   std::cout << "Logs from your program will appear here!\n";
-
-  // Uncomment this block to pass the first stage
 
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0) {
@@ -20,8 +19,6 @@ int main(int argc, char **argv) {
    return 1;
   }
 
-  // Since the tester restarts your program quite often, setting REUSE_PORT
-  // ensures that we don't run into 'Address already in use' errors
   int reuse = 1;
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) < 0) {
     std::cerr << "setsockopt failed\n";
@@ -51,8 +48,32 @@ int main(int argc, char **argv) {
   bind(server_fd, (const struct sockaddr *) &client_addr, client_addr_len);
   listen(server_fd, connection_backlog);
   int connection = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  const char* msg = "HTTP/1.1 200 OK\r\n\r\n";
-  send(connection, msg, strlen(msg), 0);
+  
+  char req[5000];
+  int bytes = recv(connection, req, 5000, 0);
+  std::string request(req, bytes);
+  int spacecount = 0;
+  std::string route;
+  for (auto letter: request){
+    if (letter == ' '){
+      spacecount++;
+    }
+    if (spacecount == 1){
+      route.push_back(letter);
+    }
+    else if (spacecount == 2){
+      break;
+    }
+  }
+  int status = 404;
+  if (route == " /"){
+    const char* msg = "HTTP/1.1 200 OK\r\n\r\n";
+    send(connection, msg, strlen(msg), 0);
+  }
+  else{
+    const char* msg = "HTTP/1.1 404 Not Found\r\n\r\n";
+    send(connection, msg, strlen(msg), 0);
+  }
 
   close(server_fd);
 
